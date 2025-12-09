@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOM-O - Service Planner</title>
+    <style>
+        /* ======================================= */
+        /* PDF AESTHETIC STYLES */
+        /* ======================================= */
+        :root {
+            --color-bg: #ffffff;
+            --color-text: #333333;
+            --color-light-gray: #f4f4f4;
+            --color-medium-gray: #cccccc;
+            --color-dark-gray: #777777;
+            --color-accent: #1e88e5; /* A subtle blue for active states/links */
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        /* App Wrapper - Central container with shadow for a page-like effect */
+        .app-wrapper {
+            max-width: 1000px;
+            margin: 30px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--color-medium-gray);
+            background: white;
+            display: flex;
+            min-height: 80vh;
+            overflow: hidden;
+        }
+
+        h1, h2, h3 {
+            color: black;
+            font-weight: normal;
+        }
+        h1 { font-size: 24px; }
+        h2 { font-size: 20px; border-bottom: 1px solid var(--color-light-gray); padding-bottom: 10px; margin-top: 0; }
+        h3 { font-size: 16px; margin-top: 0; }
+
+        /* Links and Buttons */
+        a, button, label[for] {
+            color: var(--color-text);
+            text-decoration: none;
+            border: 1px solid var(--color-medium-gray);
+            padding: 8px 15px;
+            margin: 5px;
+            display: inline-block;
+            cursor: pointer;
+            background: white;
+            transition: background 0.1s;
+        }
+        a:hover, button:hover, label[for]:hover {
+            background: var(--color-light-gray);
+            color: black;
+        }
+
+        /* ======================================= */
+        /* HTML/CSS FUNCTIONALITY (View Switching) */
+        /* ======================================= */
+        
+        /* 1. Hide all main views by default */
+        #view-home, #auth-container, #view-app { display: none; }
+        
+        /* 2. Show the targeted view (using :target) */
+        #home:target ~ #view-home, 
+        #login:target ~ #auth-container,
+        #register:target ~ #auth-container,
+        #app-view:target ~ #view-app { display: block; }
+
+        /* 3. Default to Home View if no hash is set */
+        body:not(:has(:target)) #view-home { display: block; }
+        
+        /* Utility Anchors */
+        .target-anchor { display: none; }
+
+
+        /* ======================================= */
+        /* APP LAYOUT: SIDEBAR AND CONTENT */
+        /* ======================================= */
+        .sidebar {
+            width: 220px;
+            background: var(--color-light-gray);
+            border-right: 1px solid var(--color-medium-gray);
+            padding: 20px 0;
+            flex-shrink: 0;
+            text-align: left;
+            position: relative;
+        }
+        .content-panel {
+            flex-grow: 1;
+            padding: 40px;
+            text-align: left;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar-nav a {
+            display: block;
+            border: none;
+            border-left: 3px solid transparent;
+            padding: 10px 20px;
+            margin: 0;
+            color: var(--color-dark-gray);
+            font-weight: 500;
+        }
+        .sidebar-nav a:hover {
+            background: var(--color-medium-gray);
+        }
+        /* Active link simulation (Mimicking PDF structure) */
+        .sidebar-nav a:target,
+        .sidebar-nav .active-target { /* For default dashboard state */
+            border-left-color: black;
+            background: white;
+            color: black;
+            font-weight: bold;
+        }
+        
+        .sidebar-footer {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            font-size: 12px;
+            border-top: 1px solid var(--color-medium-gray);
+            padding-top: 10px;
+        }
+
+        /* Dynamic Content Sections */
+        .app-section {
+            display: none;
+            padding: 0;
+        }
+        #dashboard:target, #schedule:target, #settings:target, #service-detail:target, #reschedule:target, #payment-view:target, #cancel-confirmed:target {
+            display: block;
+        }
+        /* Default App Content: Dashboard */
+        .content-panel:not(:has(.app-section:target)) #dashboard {
+             display: block;
+        }
+        
+        /* Forms & Inputs */
+        input[type="email"], input[type="password"], input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--color-medium-gray);
+            box-sizing: border-box;
+            display: block;
+            font-size: 14px;
+        }
+        form { max-width: 450px; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 12px; text-transform: uppercase; }
+
+        /* Card and Detail Layout */
+        .card {
+            background: white;
+            border: 1px solid var(--color-medium-gray);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .detail-header {
+            background: var(--color-light-gray);
+            padding: 15px;
+            border-bottom: 1px solid var(--color-medium-gray);
+            margin-bottom: 20px;
+        }
+        
+        /* Modal Hack Styles */
+        .modal-toggle { display: none; }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border: 5px solid black;
+            max-width: 400px;
+            text-align: center;
+        }
+        #cancel-modal-check:checked ~ .modal-overlay { display: flex; }
+    </style>
+</head>
+<body>
+
+    <a id="home" class="target-anchor" href="#home"></a>
+    <a id="login" class="target-anchor" href="#login"></a>
+    <a id="register" class="target-anchor" href="#register"></a>
+    <a id="app-view" class="target-anchor" href="#app-view"></a>
+    <a id="dashboard-target" class="target-anchor" href="#dashboard"></a>
+    
+    <div id="view-home" class="app-wrapper" style="border: none; box-shadow: none; display: flex; align-items: center; justify-content: center;">
+        <div style="max-width: 500px; text-align: center; padding: 40px; border: 1px solid var(--color-medium-gray); background: var(--color-light-gray);">
+            <h1 style="font-size: 40px; margin-bottom: 5px;">HOM-O</h1>
+            <h2 style="border: none; font-weight: bold; color: var(--color-dark-gray);">HOME SERVICE PLANNER</h2>
+            <p>Do you have a home? Do you have money? Do you need something done in your home? Cool, cuz we need your money and you need our services. **Plan, pay, get out of here.**</p>
+            <div style="margin-top: 30px;">
+                <a href="#login" style="margin-right: 15px;">Sign In</a>
+                <a href="#register" style="background: black; color: white;">Create Account</a>
+            </div>
+            <small style="display: block; margin-top: 50px; color: var(--color-dark-gray);">Powered by HOM-O</small>
+        </div>
+    </div>
+
+    <div id="auth-container" class="app-wrapper" style="justify-content: center;">
+        <div style="width: 100%; max-width: 500px; padding: 40px; text-align: center;">
+
+            <div id="login">
+                <h2>SIGN IN</h2>
+                <form action="#app-view" method="get">
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" required placeholder="user@home.com">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required placeholder="********">
+                    <button type="submit" style="width: 90%; background: black; color: white; margin-top: 20px;">SIGN IN</button>
+                </form>
+                <p style="margin-top: 30px;">Don't have an account? <a href="#register" style="border: none;">Register here</a>.</p>
+            </div>
+
+            <div id="register" style="display: none;">
+                <h2>CREATE ACCOUNT</h2>
+                <form action="#app-view" method="get">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" required placeholder="John Doe">
+                    <label for="reg-email">Email Address</label>
+                    <input type="email" id="reg-email" required placeholder="user@home.com">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" required placeholder="********">
+                    <button type="submit" style="width: 90%; background: black; color: white; margin-top: 20px;">REGISTER</button>
+                </form>
+                <p style="margin-top: 30px;">Already have an account? <a href="#login" style="border: none;">Sign in here</a>.</p>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="view-app" class="app-wrapper">
+
+        <div
